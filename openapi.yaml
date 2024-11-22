@@ -1,0 +1,319 @@
+openapi: "3.0.3"
+info:
+  title: Bookstore API
+  version: "1.0.0"
+  description: A simple bookstore API for managing books and authors
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /api/v1/authors:
+    get:
+      summary: List all authors
+      operationId: listAuthors
+      tags: ["authors"]
+      responses:
+        '200':
+          description: List of authors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Author'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/authors/{id}/stats:
+    get:
+      summary: Get author statistics
+      operationId: getAuthorStats
+      tags: [ "authors" ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Author statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      total_books:
+                        type: integer
+                      average_book_price:
+                        type: number
+                        format: float
+                      earliest_publication:
+                        type: string
+                        format: date
+                      latest_publication:
+                        type: string
+                        format: date
+                      total_revenue:
+                        type: number
+                        format: float
+                      books_by_year:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                        example:
+                          "2023": 3
+                          "2024": 1
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/books:
+    get:
+      summary: List all books
+      operationId: listBooks
+      tags: ["books"]
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a new book
+      operationId: createBook
+      tags: ["books"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookRequest'
+      responses:
+        '201':
+          description: Book created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  book:
+                    $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/books/{id}:
+    get:
+      summary: Get a book by ID
+      operationId: getBookByID
+      tags: ["books"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  book:
+                    $ref: '#/components/schemas/Book'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a book
+      operationId: updateBook
+      tags: ["books"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookRequest'
+      responses:
+        '200':
+          description: Book updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  book:
+                    $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a book
+      operationId: deleteBook
+      tags: ["books"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Book deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Author:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        bio:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        isbn:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        author:
+          $ref: '#/components/schemas/Author'
+        published_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateBookRequest:
+      type: object
+      required:
+        - title
+        - isbn
+        - author_id
+        - price
+        - published_date
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        isbn:
+          type: string
+          pattern: '^[0-9-]{10,17}$'
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+          minimum: 0
+        author_id:
+          type: integer
+        published_date:
+          type: string
+          format: date
+
+    UpdateBookRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+          minimum: 0
+        published_date:
+          type: string
+          format: date
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
+  responses:
+    BadRequestError:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
