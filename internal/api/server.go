@@ -84,12 +84,22 @@ func (s *Server) handleListAuthors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetAuthorStats(w http.ResponseWriter, r *http.Request) {
-	_, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		s.respondError(w, http.StatusBadRequest, "Invalid author ID")
 		return
 	}
-	s.respond(w, http.StatusNoContent, nil)
+
+	authorStats, err := s.queries.GetAuthorStats(r.Context(), id)
+
+	if err != nil { 
+		s.respondError(w, http.StatusInternalServerError,err.Error())
+	}
+
+	response := map[string]interface{}{
+		"stats": authorStats,
+	}
+	s.respond(w, http.StatusOK, response)
 }
 
 // Books handlers
